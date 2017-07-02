@@ -218,10 +218,10 @@ def image_sequence():
     times = [0, 100, 200, 300]
     for time in times:
         image = camera.generate_image(sphere, time, visual_effects=False)
-        image.show()
+        image.save("example-{:03d}-visual-effects-off.png".format(time), "PNG")
     for time in times:
         image = camera.generate_image(sphere, time, visual_effects=True)
-        image.show()
+        image.save("example-{:03d}-visual-effects-on.png".format(time), "PNG")
 
 if __name__ == '__main__':
     image_sequence()
