@@ -69,9 +69,11 @@ class Camera(object):
     direction. Incoming light rays enter through the pinhole and strike a flat
     screen at z = -`focal_length`. For a given picture, all of the light rays
     enter through the pinhole at the same time (even though light rays at the
-    edges of the picture would have struck the screen later). The screen is
-    then flipped (as with all pinhole cameras) to produce the correctly oriented
-    image.
+    edges of the picture would have struck the screen later).
+
+    The image must then be flipped (as with all pinhole cameras) to produce the
+    correctly oriented image; that is, an ray that hit the screen at (-x, -y,
+    -z) corresponds to the point (x, y) in the final image.
 
            +z
         \   |   /
@@ -95,6 +97,11 @@ class Camera(object):
     These ideas were taken from  "Relativistic Ray-Tracing: Simulating the
     Visual Appearance of Rapidly Moving Objects" (1995) by Howard, Dance, and
     Kitchen.
+
+    Note also that because light rays are projected onto a flat screen, there
+    will be distortion around the edges of the image, since an object that
+    subtends a certain angle will be projected onto a larger surface area when
+    its position vector makes a larger angle with respect to the z axis.
     """
 
     def __init__(self, image_width, image_height, focal_length, bg_value=0):
