@@ -1,5 +1,7 @@
 # relativistic-spheres
 
+## Introduction
+
 Objects moving at relativistic speeds are contracted in the direction of motion.
 However, the finite speed of light introduces additional visual distortions when an observer looks at an object.
 Light rays emitted from points on the moving object that are farther away from the observer take longer to reach the observer, which causes a lengthening of the apparent shape.
@@ -16,6 +18,14 @@ Like an ordinary ray tracer, this program models rays of light originating from 
 However, the light rays in this program are actually rays in 4-dimensional Minkowski space.
 Each ray has a Lorentz transformation applied to it to get it into the sphere's reference frame, and then the usual sphere collision calculation is performed.
 (There's no shading or recursion in this model.)
+
+## How to use
+
+Dependencies are `numpy` and `pillow`.
+
+The `Camera` class models a pinhole camera with a specified image width, image height, and focal length. The `Sphere` class models a sphere moving with a certain velocity and at a certain offset with respect to the camera. All 4-vectors (and some 3-vectors; it's not that consistent) are numpy arrays.
+
+Running `spheres.py` produces the examples shown below.
 
 ## Example
 
@@ -42,3 +52,10 @@ Also, the spheres are farther to the right (in the direction of motion) because 
 ![](/example-images/example-200-visual-effects-off.png)
 
 ![](/example-images/example-300-visual-effects-off.png)
+
+## Future
+
+* Move the example code out to somewhere else
+* More tests, not just the lower-level calculations
+* Support objects other than spheres (this should be straightforward since the raytracing/camera portions are split off from the objects themselves)
+* Figure out parameters to fix the aberration caused by projecting everything onto a flat surface
