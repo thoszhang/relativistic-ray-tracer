@@ -19,6 +19,8 @@ However, the light rays in this program are actually rays in 4-dimensional Minko
 Each ray has a Lorentz transformation applied to it to get it into the sphere's reference frame, and then the usual sphere collision calculation is performed.
 (There's no shading or recursion in this model.)
 
+A lot of these ideas were taken from [_Relativistic Ray-Tracing: Simulating the Visual Appearance of Rapidly Moving Objects_](https://www.researchgate.net/publication/2574193_Relativistic_Ray-Tracing_Simulating_the_Visual_Appearance_of_Rapidly_Moving_Objects) by Howard, Dance, and Kitchen.
+
 ## How to use
 
 Dependencies are `numpy` and `pillow`.
