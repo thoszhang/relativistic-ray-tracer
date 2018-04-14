@@ -5,6 +5,7 @@ from PIL import Image
 
 ORIGIN = np.array([0, 0, 0, 0])
 
+
 class Ray(object):
     """A ray in Minkowski space."""
 
@@ -17,6 +18,7 @@ class Ray(object):
 
     def translate(self, offset):
         return Ray(self.start + offset, self.next_point + offset)
+
 
 class Sphere(object):
     """
@@ -60,6 +62,7 @@ class Sphere(object):
             return x0 + t * d
         else:
             return None
+
 
 class Camera(object):
     """
@@ -121,8 +124,9 @@ class Camera(object):
         """
 
         boost_matrix = lorentz_boost(sphere.beta)
+
         def image_value(i, j):
-            x, y = (j - self.image_width/2, -(i - self.image_height/2))
+            x, y = (j - self.image_width / 2, -(i - self.image_height / 2))
             return self.trace_ray(x, y, time, sphere, boost_matrix, visual_effects)
 
         image_matrix = np.fromfunction(np.vectorize(image_value),
@@ -148,6 +152,7 @@ class Camera(object):
         else:
             return self.bg_value
 
+
 def lorentz_boost(beta):
     """
     Return 4x4 numpy array of Lorentz boost for the velocity 3-vector.
@@ -169,24 +174,27 @@ def lorentz_boost(beta):
     lambda_00 = np.matrix([[gamma]])
     lambda_0j = -gamma * np.matrix(beta)
     lambda_i0 = lambda_0j.transpose()
-    lambda_ij = np.identity(3) + (gamma-1) * np.outer(beta, beta) / beta_squared
+    lambda_ij = np.identity(3) + (gamma - 1) * np.outer(beta, beta) / beta_squared
 
     return np.asarray(np.bmat([[lambda_00, lambda_0j], [lambda_i0, lambda_ij]]))
+
 
 def quadratic_eqn_roots(a, b, c):
     """Return roots of ax^2+bx+c *in ascending order*."""
 
-    discriminant = b**2 - 4*a*c
+    discriminant = b ** 2 - 4 * a * c
     if discriminant < 0:
         return []
     elif discriminant == 0:
         return [-b / (2 * a)]
     else:
         sqrt_discriminant = np.sqrt(discriminant)
-        return [(-b - sqrt_discriminant) / (2*a), (-b + sqrt_discriminant) / (2*a)]
+        return [(-b - sqrt_discriminant) / (2 * a), (-b + sqrt_discriminant) / (2 * a)]
+
 
 def spatial_vec_length(x, y, z):
-    return np.sqrt(x**2 + y**2 + z**2)
+    return np.sqrt(x ** 2 + y ** 2 + z ** 2)
+
 
 def spherical_angles(x, y, z):
     """Return (inclination, azimuth) for the given cartesian coords."""
@@ -196,12 +204,14 @@ def spherical_angles(x, y, z):
     phi = np.arctan2(y, x) + np.pi
     return (theta, phi)
 
+
 def checkerboard(x, y, z):
     theta, phi = spherical_angles(x, y, z)
     n_theta = int((theta / np.pi) * 12)
-    n_phi = int((phi / (2*np.pi)) * 12)
+    n_phi = int((phi / (2 * np.pi)) * 12)
 
     return 127 + 128 * ((n_theta + n_phi) % 2)
+
 
 def image_sequence():
     height = 150
@@ -222,6 +232,7 @@ def image_sequence():
     for time in times:
         image = camera.generate_image(sphere, time, visual_effects=True)
         image.save("example-{:03d}-visual-effects-on.png".format(time), "PNG")
+
 
 if __name__ == '__main__':
     image_sequence()

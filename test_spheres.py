@@ -1,5 +1,9 @@
 import pytest
-import spheres, numpy as np, numpy.testing as nptest
+
+import numpy as np
+import numpy.testing as nptest
+import spheres
+
 
 class TestSphereIntersection(object):
     def test_sphere_two_intersections(self):
@@ -64,6 +68,6 @@ class TestLorentzBoost(object):
         beta = np.array([0.5, 0.5, 0.5])
         nptest.assert_almost_equal(spheres.lorentz_boost(beta),
                                    np.array([[2, -1, -1, -1],
-                                             [-1, 4/3., 1/3., 1/3.],
-                                             [-1, 1/3., 4/3., 1/3.],
-                                             [-1, 1/3., 1/3., 4/3.]]))
+                                             [-1, 4 / 3., 1 / 3., 1 / 3.],
+                                             [-1, 1 / 3., 4 / 3., 1 / 3.],
+                                             [-1, 1 / 3., 1 / 3., 4 / 3.]]))
