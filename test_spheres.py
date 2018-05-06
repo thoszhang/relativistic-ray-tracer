@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import numpy.testing as nptest
 import spheres
+import util
 
 
 class TestSphereIntersection(object):
@@ -34,7 +35,7 @@ class TestSphereIntersection(object):
 class TestLorentzBoost(object):
     def test_identity(self):
         beta = np.array([0, 0, 0])
-        nptest.assert_almost_equal(spheres.lorentz_boost(beta),
+        nptest.assert_almost_equal(util.lorentz_boost(beta),
                                    np.array([[1, 0, 0, 0],
                                              [0, 1, 0, 0],
                                              [0, 0, 1, 0],
@@ -42,7 +43,7 @@ class TestLorentzBoost(object):
 
     def test_x_boost(self):
         beta = np.array([0.6, 0, 0])
-        nptest.assert_almost_equal(spheres.lorentz_boost(beta),
+        nptest.assert_almost_equal(util.lorentz_boost(beta),
                                    np.array([[1.25, -0.75, 0, 0],
                                              [-0.75, 1.25, 0, 0],
                                              [0, 0, 1, 0],
@@ -50,7 +51,7 @@ class TestLorentzBoost(object):
 
     def test_y_boost(self):
         beta = np.array([0, 0.6, 0])
-        nptest.assert_almost_equal(spheres.lorentz_boost(beta),
+        nptest.assert_almost_equal(util.lorentz_boost(beta),
                                    np.array([[1.25, 0, -0.75, 0],
                                              [0, 1, 0, 0],
                                              [-0.75, 0, 1.25, 0],
@@ -58,7 +59,7 @@ class TestLorentzBoost(object):
 
     def test_z_boost(self):
         beta = np.array([0, 0, 0.6])
-        nptest.assert_almost_equal(spheres.lorentz_boost(beta),
+        nptest.assert_almost_equal(util.lorentz_boost(beta),
                                    np.array([[1.25, 0, 0, -0.75],
                                              [0, 1, 0, 0],
                                              [0, 0, 1, 0],
@@ -66,7 +67,7 @@ class TestLorentzBoost(object):
 
     def test_xyz_boost(self):
         beta = np.array([0.5, 0.5, 0.5])
-        nptest.assert_almost_equal(spheres.lorentz_boost(beta),
+        nptest.assert_almost_equal(util.lorentz_boost(beta),
                                    np.array([[2, -1, -1, -1],
                                              [-1, 4 / 3., 1 / 3., 1 / 3.],
                                              [-1, 1 / 3., 4 / 3., 1 / 3.],
