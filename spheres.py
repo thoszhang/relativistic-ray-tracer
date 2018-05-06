@@ -93,6 +93,56 @@ class Cylinder(object):
         return None
 
 
+class Box(object):
+    """
+    A box with a width, length, and height, made up of cylinders.
+    """
+
+    def __init__(self, width, height, depth, segment_radius):
+        self.segment_radius = segment_radius
+        self.cylinders = MultipleObjects(self.get_cylinders(width, height, depth, segment_radius))
+
+    @staticmethod
+    def get_cylinders(width, height, depth, segment_radius):
+        x, y, z = width / 2.0, height / 2.0, depth / 2.0
+        endpoints = [
+            # "front" rectangle
+            ((+x, +y, +z), (+x, -y, +z)),
+            ((+x, -y, +z), (-x, -y, +z)),
+            ((-x, -y, +z), (-x, +y, +z)),
+            ((-x, +y, +z), (+x, +y, +z)),
+            # "back" rectangle
+            ((+x, +y, -z), (+x, -y, -z)),
+            ((+x, -y, -z), (-x, -y, -z)),
+            ((-x, -y, -z), (-x, +y, -z)),
+            ((-x, +y, -z), (+x, +y, -z)),
+            # connect the rectangles to make a prism
+            ((+x, +y, +z), (+x, +y, -z)),
+            ((+x, -y, +z), (+x, -y, -z)),
+            ((-x, -y, +z), (-x, -y, -z)),
+            ((-x, +y, +z), (-x, +y, -z)),
+        ]
+        return [Cylinder(start, end, segment_radius) for start, end in endpoints]
+
+    def detect_intersection(self, ray):
+        return self.cylinders.detect_intersection(ray)
+
+
+class MultipleObjects(object):
+    def __init__(self, objects):
+        self.objects = objects
+
+    def detect_intersection(self, ray):
+        min_dist = None
+        point = None
+        for p in [o.detect_intersection(ray) for o in self.objects]:
+            dist = np.linalg.norm(p - ray.start)
+            if not min_dist or dist < min_dist:
+                min_dist = dist
+                point = p
+        return point
+
+
 class Camera(object):
     """
     An ideal pinhole camera.
