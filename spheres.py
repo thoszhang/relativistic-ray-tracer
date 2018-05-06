@@ -82,7 +82,6 @@ class Cylinder(object):
         c = np.inner(q_proj, q_proj) - self.radius ** 2
 
         solns = util.quadratic_eqn_roots(a, b, c)
-        print solns
         for root in solns:
             if root >= 0:
                 x = x0 + root * d

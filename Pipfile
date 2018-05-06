@@ -13,4 +13,8 @@ name = "pypi"
 
 numpy = "*"
 pillow = "*"
-pytest = "*"
+
+
+[requires]
+
+python_version = "3.6"
