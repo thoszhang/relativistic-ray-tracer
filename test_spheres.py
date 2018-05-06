@@ -88,6 +88,14 @@ class TestCylinderIntersection(object):
         nptest.assert_almost_equal(intersection, np.array([0, 1., 0]))
 
 
+class TestBoxIntersection(object):
+    def test_box_intersection(self):
+        box = spheres.Box(2., 2., 2., 0.1)
+        intersection = box.detect_intersection(spheres.Ray(np.array([0, 2., 1., 0]),
+                                                           np.array([0, -1., 0, 0])))
+        nptest.assert_almost_equal(intersection, np.array([1.1, 1.0, 0]))
+
+
 class TestLorentzBoost(object):
     def test_identity(self):
         beta = np.array([0, 0, 0])

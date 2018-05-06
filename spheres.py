@@ -104,7 +104,7 @@ class Box(object):
 
     @staticmethod
     def get_cylinders(width, height, depth, segment_radius):
-        x, y, z = width / 2.0, height / 2.0, depth / 2.0
+        x, y, z = width / 2.0 + segment_radius, height / 2.0 + segment_radius, depth / 2.0 + segment_radius
         endpoints = [
             # "front" rectangle
             ((+x, +y, +z), (+x, -y, +z)),
@@ -133,13 +133,15 @@ class MultipleObjects(object):
         self.objects = objects
 
     def detect_intersection(self, ray):
+        x0 = ray.start[1:4]
         min_dist = None
         point = None
         for p in [o.detect_intersection(ray) for o in self.objects]:
-            dist = np.linalg.norm(p - ray.start)
-            if not min_dist or dist < min_dist:
-                min_dist = dist
-                point = p
+            if p is not None:
+                dist = np.linalg.norm(p - x0)
+                if not min_dist or dist < min_dist:
+                    min_dist = dist
+                    point = p
         return point
 
 
