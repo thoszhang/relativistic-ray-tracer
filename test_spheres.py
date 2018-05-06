@@ -10,19 +10,19 @@ class TestSphereIntersection(object):
     def test_sphere_two_intersections(self):
         sphere = spheres.Sphere(1, None, None, None)
         intersection = sphere.detect_intersection(spheres.Ray(np.array([0, 3, 0, 0]),
-                                                              np.array([0, 2, 0, 0])))
+                                                              np.array([0, -1, 0, 0])))
         nptest.assert_almost_equal(intersection, np.array([1, 0, 0]))
 
     def test_sphere_no_intersection(self):
         sphere = spheres.Sphere(1, None, None, None)
         intersection = sphere.detect_intersection(spheres.Ray(np.array([0, 2, 0, 0]),
-                                                              np.array([0, 2, 1, 0])))
+                                                              np.array([0, 0, 1, 0])))
         assert intersection is None
 
     def test_ray_pointing_other_direction(self):
         sphere = spheres.Sphere(1, None, None, None)
         intersection = sphere.detect_intersection(spheres.Ray(np.array([0, 0, 2, 0]),
-                                                              np.array([0, 0, 3, 0])))
+                                                              np.array([0, 0, 1, 0])))
         assert intersection is None
 
     def test_ray_starts_inside_sphere(self):

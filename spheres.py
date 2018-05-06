@@ -10,15 +10,15 @@ ORIGIN = np.array([0, 0, 0, 0])
 class Ray(object):
     """A ray in Minkowski space."""
 
-    def __init__(self, start, next_point):
+    def __init__(self, start, direction):
         self.start = start
-        self.next_point = next_point
+        self.direction = direction
 
     def boost(self, boost_matrix):
-        return Ray(boost_matrix.dot(self.start), boost_matrix.dot(self.next_point))
+        return Ray(boost_matrix.dot(self.start), boost_matrix.dot(self.direction))
 
     def translate(self, offset):
-        return Ray(self.start + offset, self.next_point + offset)
+        return Ray(self.start + offset, self.direction)
 
 
 class Sphere(object):
@@ -46,8 +46,7 @@ class Sphere(object):
         """
 
         x0 = ray.start[1:4]
-        x1 = ray.next_point[1:4]
-        d = x1 - x0
+        d = ray.direction[1:4]
 
         a = np.inner(d, d)
         b = 2 * np.inner(x0, d)
