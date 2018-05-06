@@ -52,16 +52,46 @@ class Sphere(object):
         b = 2 * np.inner(x0, d)
         c = np.inner(x0, x0) - self.radius ** 2
         solns = util.quadratic_eqn_roots(a, b, c)
-        t = None
         for root in solns:
             if root >= 0:
-                t = root
-                break
+                return x0 + root * d
 
-        if t:
-            return x0 + t * d
-        else:
+        return None
+
+
+class Cylinder(object):
+    def __init__(self, start, end, radius):
+        self.start = np.asarray(start)
+        self.end = np.asarray(end)
+        self.radius = radius
+        self.axis = self.end - self.start
+
+    def detect_intersection(self, ray):
+        # TODO: document this better
+        x0 = ray.start[1:4]
+        d = ray.direction[1:4]
+        d_proj = d - (np.inner(d, self.axis) / np.inner(self.axis, self.axis)) * self.axis
+
+        q = x0 - self.start
+        q_proj = q - (np.inner(q, self.axis) / np.inner(self.axis, self.axis)) * self.axis
+
+        a = np.inner(d_proj, d_proj)
+        if a == 0:
             return None
+        b = 2 * np.inner(d_proj, q_proj)
+        c = np.inner(q_proj, q_proj) - self.radius ** 2
+
+        solns = util.quadratic_eqn_roots(a, b, c)
+        print solns
+        for root in solns:
+            if root >= 0:
+                x = x0 + root * d
+                # parameter for the cylinder axis line segment
+                s = np.inner(x - self.start, self.axis) / np.inner(self.axis, self.axis)
+                if 0 <= s <= 1:
+                    return x
+
+        return None
 
 
 class Camera(object):
