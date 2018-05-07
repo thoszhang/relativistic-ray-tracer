@@ -40,7 +40,7 @@ class Ray:
 class Sphere(RayTracedObject):
     """A (3d) sphere centered at the origin."""
 
-    def __init__(self, radius, color_function=None):
+    def __init__(self, radius, color_function=lambda p: 255):
         self.radius = radius
         self.color_function = color_function
         self._radius_sq = radius ** 2
@@ -68,7 +68,7 @@ class Sphere(RayTracedObject):
 
 
 class Cylinder(RayTracedObject):
-    def __init__(self, start, end, radius, color):
+    def __init__(self, start, end, radius, color=255):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
         self.radius = radius
@@ -113,10 +113,10 @@ class Cylinder(RayTracedObject):
 
 class RectangularPrism(RayTracedObject):
     """
-    A box with a width, length, and height, made up of cylinders.
+    A rectangular prism with edges parallel to the coordinate axes, made up of cylinders.
     """
 
-    def __init__(self, width, height, depth, segment_radius, color):
+    def __init__(self, width, height, depth, segment_radius, color=255):
         self.width = width
         self.height = height
         self.depth = depth
@@ -176,7 +176,7 @@ class MultipleObjects(RayTracedObject):
         closest_point = None
         closest_obj = None
         for obj in self.objs:
-            point = obj.detect_intersection(ray)
+            point = obj.intersection(ray)
             if point is not None:
                 dist = np.linalg.norm(point - x0)
                 if not min_dist or dist < min_dist:
@@ -230,11 +230,11 @@ class Camera:
     its position vector makes a larger angle with respect to the z axis.
     """
 
-    def __init__(self, image_width, image_height, focal_length, bg_value=0):
+    def __init__(self, image_width, image_height, focal_length, bg_color=0):
         self.image_width = image_width
         self.image_height = image_height
         self.focal_length = focal_length
-        self.bg_value = bg_value
+        self.bg_value = bg_color
 
     def generate_image(self, scene_object, time, beta, offset):
         boost_matrix = util.lorentz_boost(beta)
