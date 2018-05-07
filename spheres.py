@@ -7,7 +7,7 @@ from PIL import Image
 ORIGIN = np.array([0, 0, 0, 0])
 
 
-class Ray(object):
+class Ray:
     """A ray in Minkowski space."""
 
     def __init__(self, start, direction):
@@ -23,7 +23,7 @@ class Ray(object):
         return Ray(self.start + offset, self.direction)
 
 
-class Sphere(object):
+class Sphere:
     """
     A 3d sphere with a radius.
 
@@ -61,7 +61,7 @@ class Sphere(object):
         return None
 
 
-class Cylinder(object):
+class Cylinder:
     def __init__(self, start, end, radius):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
@@ -97,7 +97,7 @@ class Cylinder(object):
         return None
 
 
-class Box(object):
+class Box:
     """
     A box with a width, length, and height, made up of cylinders.
     """
@@ -132,7 +132,7 @@ class Box(object):
         return self.cylinders.detect_intersection(ray)
 
 
-class MultipleObjects(object):
+class MultipleObjects:
     def __init__(self, objects):
         self.objects = objects
 
@@ -149,7 +149,7 @@ class MultipleObjects(object):
         return point
 
 
-class Camera(object):
+class Camera:
     """
     An ideal pinhole camera.
 
