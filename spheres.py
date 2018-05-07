@@ -122,7 +122,7 @@ class RectangularPrism(RayTracedObject):
         self.depth = depth
         self.segment_radius = segment_radius
         self.color = color
-        self._cylinders = MultipleObjects(self._get_cylinders())
+        self._cylinders = CompositeObject(self._get_cylinders())
 
     def _get_cylinders(self):
         x = self.width / 2.0 + self.segment_radius
@@ -155,7 +155,7 @@ class RectangularPrism(RayTracedObject):
         return self._cylinders.intersection(ray)
 
 
-class MultipleObjects(RayTracedObject):
+class CompositeObject(RayTracedObject):
     def __init__(self, objs):
         self.objs = objs
 
@@ -187,7 +187,7 @@ class MultipleObjects(RayTracedObject):
         return closest_obj, closest_point
 
 
-class Camera:
+class RayTracer:
     """
     An ideal pinhole camera.
 
@@ -294,7 +294,7 @@ def image_sequence():
     # radius = 50
     # sphere_function = util.checkerboard
 
-    camera = Camera(width, height, focal_length)
+    camera = RayTracer(width, height, focal_length)
     # sphere = Sphere(radius, sphere_function, beta, offset)
     times = [0, 100, 200, 300]
     for time in times:
