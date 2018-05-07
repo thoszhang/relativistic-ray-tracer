@@ -2,9 +2,23 @@
 
 import util
 import numpy as np
+from abc import ABC, abstractmethod
+from collections import namedtuple
 from PIL import Image
 
 ORIGIN = np.array([0, 0, 0, 0])
+
+MovingObject = namedtuple('MovingObject', ['obj', 'beta', 'offset'])
+
+
+class RayTracedObject(ABC):
+    @abstractmethod
+    def color(self, ray):
+        """Get the color of the object where it intersects with a ray."""
+
+    @abstractmethod
+    def intersection(self, ray):
+        """Get the intersection point of a ray with the object."""
 
 
 class Ray:
@@ -23,36 +37,28 @@ class Ray:
         return Ray(self.start + offset, self.direction)
 
 
-class Sphere:
-    """
-    A 3d sphere with a radius.
+class Sphere(RayTracedObject):
+    """A (3d) sphere centered at the origin."""
 
-    Note that `radius` and `surface_function` are intrinsic to the sphere, but
-    `beta` and `offset` are given with respect to the camera and in the camera's
-    reference frame.
-    """
-
-    def __init__(self, radius, surface_function, beta, offset):
+    def __init__(self, radius, color_function=None):
         self.radius = radius
-        self.surface_function = surface_function
-        self.beta = beta
-        self.offset = offset
+        self.color_function = color_function
+        self._radius_sq = radius ** 2
 
-    def surface_value(self, x, y, z):
-        return self.surface_function(x, y, z)
+    def color(self, ray):
+        point = self.intersection(ray)
+        if point is not None:
+            return self.color_function(point)
+        else:
+            return None
 
-    def detect_intersection(self, ray):
-        """
-        Return the intersection of a ray with this sphere that is closest to
-        the ray's start point.
-        """
-
+    def intersection(self, ray):
         x0 = ray.start_3
         d = ray.direction_3
 
         a = np.inner(d, d)
         b = 2 * np.inner(x0, d)
-        c = np.inner(x0, x0) - self.radius ** 2
+        c = np.inner(x0, x0) - self._radius_sq
         solns = util.quadratic_eqn_roots(a, b, c)
         for root in solns:
             if root >= 0:
@@ -61,54 +67,68 @@ class Sphere:
         return None
 
 
-class Cylinder:
-    def __init__(self, start, end, radius):
+class Cylinder(RayTracedObject):
+    def __init__(self, start, end, radius, color):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
         self.radius = radius
-        self.radius_sq = radius ** 2
-        self.axis = self.end - self.start
-        self.axis_sq = np.inner(self.axis, self.axis)
+        self.color = color
+        self._radius_sq = radius ** 2
+        self._axis = self.end - self.start
+        self._axis_sq = np.inner(self._axis, self._axis)
 
-    def detect_intersection(self, ray):
+    def color(self, ray):
+        point = self.intersection(ray)
+        if point is not None:
+            return self.color
+        else:
+            return None
+
+    def intersection(self, ray):
         # TODO: document this better
         x0 = ray.start_3
         d = ray.direction_3
-        d_proj = d - (np.inner(d, self.axis) / self.axis_sq) * self.axis
+        d_proj = d - (np.inner(d, self._axis) / self._axis_sq) * self._axis
 
         q = x0 - self.start
-        q_proj = q - (np.inner(q, self.axis) / self.axis_sq) * self.axis
+        q_proj = q - (np.inner(q, self._axis) / self._axis_sq) * self._axis
 
         a = np.inner(d_proj, d_proj)
         if a == 0:
             return None
         b = 2 * np.inner(d_proj, q_proj)
-        c = np.inner(q_proj, q_proj) - self.radius_sq
+        c = np.inner(q_proj, q_proj) - self._radius_sq
 
         solns = util.quadratic_eqn_roots(a, b, c)
         for root in solns:
             if root >= 0:
                 x = x0 + root * d
                 # parameter for the cylinder axis line segment
-                s = np.inner(x - self.start, self.axis) / self.axis_sq
+                s = np.inner(x - self.start, self._axis) / self._axis_sq
                 if 0 <= s <= 1:
                     return x
 
         return None
 
 
-class Box:
+class RectangularPrism(RayTracedObject):
     """
     A box with a width, length, and height, made up of cylinders.
     """
 
-    def __init__(self, width, height, depth, segment_radius):
+    def __init__(self, width, height, depth, segment_radius, color):
+        self.width = width
+        self.height = height
+        self.depth = depth
         self.segment_radius = segment_radius
-        self.cylinders = MultipleObjects(self.get_cylinders(width, height, depth, segment_radius))
+        self.color = color
+        self._cylinders = MultipleObjects(self._get_cylinders())
 
-    @staticmethod
-    def get_cylinders(width, height, depth, segment_radius):
-        x, y, z = width / 2.0 + segment_radius, height / 2.0 + segment_radius, depth / 2.0 + segment_radius
+    def _get_cylinders(self):
+        x = self.width / 2.0 + self.segment_radius
+        y = self.height / 2.0 + self.segment_radius
+        z = self.depth / 2.0 + self.segment_radius
+
         endpoints = [
             # "front" rectangle
             ((+x, +y, +z), (+x, -y, +z)),
@@ -126,27 +146,45 @@ class Box:
             ((-x, -y, +z), (-x, -y, -z)),
             ((-x, +y, +z), (-x, +y, -z)),
         ]
-        return [Cylinder(start, end, segment_radius) for start, end in endpoints]
+        return [Cylinder(start, end, self.segment_radius, self.color) for start, end in endpoints]
 
-    def detect_intersection(self, ray):
-        return self.cylinders.detect_intersection(ray)
+    def color(self, ray):
+        return self._cylinders.color(ray)
+
+    def intersection(self, ray):
+        return self._cylinders.intersection(ray)
 
 
-class MultipleObjects:
-    def __init__(self, objects):
-        self.objects = objects
+class MultipleObjects(RayTracedObject):
+    def __init__(self, objs):
+        self.objs = objs
 
-    def detect_intersection(self, ray):
+    def color(self, ray):
+        closest_obj, closest_point = self._get_closest_intersecting_object(ray)
+        if closest_obj is not None:
+            return closest_obj.color(closest_point)
+        else:
+            return None
+
+    def intersection(self, ray):
+        closest_obj, closest_point = self._get_closest_intersecting_object(ray)
+        return closest_point
+
+    def _get_closest_intersecting_object(self, ray):
         x0 = ray.start_3
         min_dist = None
-        point = None
-        for p in [o.detect_intersection(ray) for o in self.objects]:
-            if p is not None:
-                dist = np.linalg.norm(p - x0)
+        closest_point = None
+        closest_obj = None
+        for obj in self.objs:
+            point = obj.detect_intersection(ray)
+            if point is not None:
+                dist = np.linalg.norm(point - x0)
                 if not min_dist or dist < min_dist:
                     min_dist = dist
-                    point = p
-        return point
+                    closest_point = point
+                    closest_obj = obj
+
+        return closest_obj, closest_point
 
 
 class Camera:
@@ -250,7 +288,7 @@ def image_sequence():
     beta = np.array([0.5, 0, 0])
     offset = np.array([0, 0, 0, -200])
 
-    cube = Box(100, 100, 100, 1)
+    cube = RectangularPrism(100, 100, 100, 1)
 
 
     # radius = 50
