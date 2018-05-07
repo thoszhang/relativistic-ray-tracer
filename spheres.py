@@ -196,25 +196,29 @@ class Camera(object):
         self.focal_length = focal_length
         self.bg_value = bg_value
 
-    def generate_image(self, sphere, time=0, visual_effects=True):
-        """
-        Generate a "ray-traced" image of a sphere moving at some velocity.
-
-        `time` is the time at which light rays enter the pinhole.
-        `visual_effects` can be turned off in order to see the actual dimensions
-        of the moving sphere, i.e., with length contraction, without the visual
-        effects.
-        """
-
-        boost_matrix = util.lorentz_boost(sphere.beta)
+    def generate_image(self, scene_object, time, beta, offset):
+        boost_matrix = util.lorentz_boost(beta)
 
         def image_value(i, j):
             x, y = (j - self.image_width / 2, -(i - self.image_height / 2))
-            return self.trace_ray(x, y, time, sphere, boost_matrix, visual_effects)
+            return self.detect_intersection(x, y, time, scene_object, offset, boost_matrix)
 
         image_matrix = np.fromfunction(np.vectorize(image_value),
                                        (self.image_height, self.image_width))
         return Image.fromarray(image_matrix.astype(np.uint8), mode='L')
+
+    def detect_intersection(self, x, y, time, scene_object, offset, boost_matrix):
+        z = self.focal_length
+        origin_to_image_time = util.spatial_vec_length(x, y, z)
+        image_coords = np.array([-origin_to_image_time, x, y, z])
+        original_ray = Ray(ORIGIN, image_coords).translate(np.array([time, 0, 0, 0]))
+
+        transformed_ray = original_ray.boost(boost_matrix).translate(offset)
+        intersection = scene_object.detect_intersection(transformed_ray)
+        if intersection is not None:
+            return 255
+        else:
+            return self.bg_value
 
     def trace_ray(self, x, y, time, sphere, boost_matrix, visual_effects):
         z = self.focal_length
@@ -243,18 +247,19 @@ def image_sequence():
 
     beta = np.array([0.5, 0, 0])
     offset = np.array([0, 0, 0, -200])
-    radius = 50
-    sphere_function = util.checkerboard
+
+    cube = Box(100, 100, 100, 1)
+
+
+    # radius = 50
+    # sphere_function = util.checkerboard
 
     camera = Camera(width, height, focal_length)
-    sphere = Sphere(radius, sphere_function, beta, offset)
+    # sphere = Sphere(radius, sphere_function, beta, offset)
     times = [0, 100, 200, 300]
     for time in times:
-        image = camera.generate_image(sphere, time, visual_effects=False)
+        image = camera.generate_image(cube, time, beta, offset)
         image.save("example-{:03d}-visual-effects-off.png".format(time), "PNG")
-    for time in times:
-        image = camera.generate_image(sphere, time, visual_effects=True)
-        image.save("example-{:03d}-visual-effects-on.png".format(time), "PNG")
 
 
 if __name__ == '__main__':
