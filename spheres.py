@@ -13,6 +13,8 @@ class Ray(object):
     def __init__(self, start, direction):
         self.start = start
         self.direction = direction
+        self.start_3 = start[1:4]
+        self.direction_3 = direction[1:4]
 
     def boost(self, boost_matrix):
         return Ray(boost_matrix.dot(self.start), boost_matrix.dot(self.direction))
@@ -45,8 +47,8 @@ class Sphere(object):
         the ray's start point.
         """
 
-        x0 = ray.start[1:4]
-        d = ray.direction[1:4]
+        x0 = ray.start_3
+        d = ray.direction_3
 
         a = np.inner(d, d)
         b = 2 * np.inner(x0, d)
@@ -68,8 +70,8 @@ class Cylinder(object):
 
     def detect_intersection(self, ray):
         # TODO: document this better
-        x0 = ray.start[1:4]
-        d = ray.direction[1:4]
+        x0 = ray.start_3
+        d = ray.direction_3
         d_proj = d - (np.inner(d, self.axis) / np.inner(self.axis, self.axis)) * self.axis
 
         q = x0 - self.start
