@@ -66,29 +66,31 @@ class Cylinder(object):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
         self.radius = radius
+        self.radius_sq = radius ** 2
         self.axis = self.end - self.start
+        self.axis_sq = np.inner(self.axis, self.axis)
 
     def detect_intersection(self, ray):
         # TODO: document this better
         x0 = ray.start_3
         d = ray.direction_3
-        d_proj = d - (np.inner(d, self.axis) / np.inner(self.axis, self.axis)) * self.axis
+        d_proj = d - (np.inner(d, self.axis) / self.axis_sq) * self.axis
 
         q = x0 - self.start
-        q_proj = q - (np.inner(q, self.axis) / np.inner(self.axis, self.axis)) * self.axis
+        q_proj = q - (np.inner(q, self.axis) / self.axis_sq) * self.axis
 
         a = np.inner(d_proj, d_proj)
         if a == 0:
             return None
         b = 2 * np.inner(d_proj, q_proj)
-        c = np.inner(q_proj, q_proj) - self.radius ** 2
+        c = np.inner(q_proj, q_proj) - self.radius_sq
 
         solns = util.quadratic_eqn_roots(a, b, c)
         for root in solns:
             if root >= 0:
                 x = x0 + root * d
                 # parameter for the cylinder axis line segment
-                s = np.inner(x - self.start, self.axis) / np.inner(self.axis, self.axis)
+                s = np.inner(x - self.start, self.axis) / self.axis_sq
                 if 0 <= s <= 1:
                     return x
 
@@ -135,7 +137,7 @@ class MultipleObjects(object):
         self.objects = objects
 
     def detect_intersection(self, ray):
-        x0 = ray.start[1:4]
+        x0 = ray.start_3
         min_dist = None
         point = None
         for p in [o.detect_intersection(ray) for o in self.objects]:
