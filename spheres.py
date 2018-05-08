@@ -232,7 +232,7 @@ class RayTracer:
             image_coords = np.array([-origin_to_image_time, x, y, self.focal_length])
             camera_frame_ray = Ray(ORIGIN, image_coords).translate(np.array([time, 0, 0, 0]))
 
-            object_frame_ray = camera_frame_ray.boost(boost_matrix).translate(moving_object.offset)
+            object_frame_ray = camera_frame_ray.translate(-moving_object.offset).boost(boost_matrix)
             intersection, color = moving_object.obj.get_intersection_and_color(object_frame_ray)
             if color:
                 return color
@@ -254,7 +254,7 @@ def image_sequence():
     focal_length = 200
 
     beta = (0.5, 0, 0)
-    offset = (0, 0, 0, -200)
+    offset = (0, 0, 0, 200)
 
     cube = RectangularPrism(100, 100, 100, 1)
     moving_cube = MovingObject(cube, beta, offset)
