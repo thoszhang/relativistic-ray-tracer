@@ -3,22 +3,11 @@
 import util
 import numpy as np
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from PIL import Image
 
 ORIGIN = np.array([0, 0, 0, 0])
-
-MovingObject = namedtuple('MovingObject', ['obj', 'beta', 'offset'])
-
-
-class RayTracedObject(ABC):
-    @abstractmethod
-    def color(self, ray):
-        """Get the color of the object where it intersects with a ray."""
-
-    @abstractmethod
-    def intersection(self, ray):
-        """Get the intersection point of a ray with the object."""
+DEFAULT_OBJ_COLOR = 255
+DEFAULT_BG_COLOR = 0
 
 
 class Ray:
@@ -37,22 +26,28 @@ class Ray:
         return Ray(self.start + offset, self.direction)
 
 
+class RayTracedObject(ABC):
+    @abstractmethod
+    def get_intersection_and_color(self, ray: Ray):
+        """Get the point where the ray intersects with the object, and its color at that point."""
+
+
 class Sphere(RayTracedObject):
     """A (3d) sphere centered at the origin."""
 
-    def __init__(self, radius, color_function=lambda p: 255):
+    def __init__(self, radius, color_function=lambda p: DEFAULT_OBJ_COLOR):
         self.radius = radius
         self.color_function = color_function
         self._radius_sq = radius ** 2
 
-    def color(self, ray):
-        point = self.intersection(ray)
-        if point is not None:
-            return self.color_function(point)
+    def get_intersection_and_color(self, ray: Ray):
+        intersection = self._get_intersection(ray)
+        if intersection is not None:
+            return intersection, self.color_function(intersection)
         else:
-            return None
+            return None, None
 
-    def intersection(self, ray):
+    def _get_intersection(self, ray: Ray):
         x0 = ray.start_3
         d = ray.direction_3
 
@@ -68,7 +63,7 @@ class Sphere(RayTracedObject):
 
 
 class Cylinder(RayTracedObject):
-    def __init__(self, start, end, radius, color=255):
+    def __init__(self, start, end, radius, color=DEFAULT_OBJ_COLOR):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
         self.radius = radius
@@ -77,14 +72,14 @@ class Cylinder(RayTracedObject):
         self._axis = self.end - self.start
         self._axis_sq = np.inner(self._axis, self._axis)
 
-    def color(self, ray):
-        point = self.intersection(ray)
-        if point is not None:
-            return self.color
+    def get_intersection_and_color(self, ray: Ray):
+        intersection = self._get_intersection(ray)
+        if intersection is not None:
+            return intersection, self.color
         else:
-            return None
+            return None, None
 
-    def intersection(self, ray):
+    def _get_intersection(self, ray: Ray):
         # TODO: document this better
         x0 = ray.start_3
         d = ray.direction_3
@@ -111,12 +106,33 @@ class Cylinder(RayTracedObject):
         return None
 
 
+class CompositeObject(RayTracedObject):
+    def __init__(self, objs):
+        self.objs = objs
+
+    def get_intersection_and_color(self, ray: Ray):
+        x0 = ray.start_3
+        min_dist = None
+        intersection = None
+        color = None
+        for obj in self.objs:
+            i, c = obj.get_intersection_and_color(ray)
+            if i is not None:
+                dist = np.linalg.norm(i - x0)
+                if not min_dist or dist < min_dist:
+                    min_dist = dist
+                    intersection = i
+                    color = c
+
+        return intersection, color
+
+
 class RectangularPrism(RayTracedObject):
     """
     A rectangular prism with edges parallel to the coordinate axes, made up of cylinders.
     """
 
-    def __init__(self, width, height, depth, segment_radius, color=255):
+    def __init__(self, width, height, depth, segment_radius, color=DEFAULT_OBJ_COLOR):
         self.width = width
         self.height = height
         self.depth = depth
@@ -148,43 +164,15 @@ class RectangularPrism(RayTracedObject):
         ]
         return [Cylinder(start, end, self.segment_radius, self.color) for start, end in endpoints]
 
-    def color(self, ray):
-        return self._cylinders.color(ray)
-
-    def intersection(self, ray):
-        return self._cylinders.intersection(ray)
+    def get_intersection_and_color(self, ray: Ray):
+        return self._cylinders.get_intersection_and_color(ray)
 
 
-class CompositeObject(RayTracedObject):
-    def __init__(self, objs):
-        self.objs = objs
-
-    def color(self, ray):
-        closest_obj, closest_point = self._get_closest_intersecting_object(ray)
-        if closest_obj is not None:
-            return closest_obj.color(closest_point)
-        else:
-            return None
-
-    def intersection(self, ray):
-        closest_obj, closest_point = self._get_closest_intersecting_object(ray)
-        return closest_point
-
-    def _get_closest_intersecting_object(self, ray):
-        x0 = ray.start_3
-        min_dist = None
-        closest_point = None
-        closest_obj = None
-        for obj in self.objs:
-            point = obj.intersection(ray)
-            if point is not None:
-                dist = np.linalg.norm(point - x0)
-                if not min_dist or dist < min_dist:
-                    min_dist = dist
-                    closest_point = point
-                    closest_obj = obj
-
-        return closest_obj, closest_point
+class MovingObject:
+    def __init__(self, obj: RayTracedObject, beta, offset):
+        self.obj = obj
+        self.beta = np.asarray(beta)
+        self.offset = np.asarray(offset)
 
 
 class RayTracer:
@@ -230,54 +218,34 @@ class RayTracer:
     its position vector makes a larger angle with respect to the z axis.
     """
 
-    def __init__(self, image_width, image_height, focal_length, bg_color=0):
+    def __init__(self, image_width, image_height, focal_length, bg_color=DEFAULT_BG_COLOR):
         self.image_width = image_width
         self.image_height = image_height
         self.focal_length = focal_length
         self.bg_value = bg_color
 
-    def generate_image(self, scene_object, time, beta, offset):
-        boost_matrix = util.lorentz_boost(beta)
+    def generate_image(self, moving_object: MovingObject, time):
+        boost_matrix = util.lorentz_boost(moving_object.beta)
+
+        def trace_ray(x, y):
+            origin_to_image_time = np.linalg.norm([x, y, self.focal_length])
+            image_coords = np.array([-origin_to_image_time, x, y, self.focal_length])
+            camera_frame_ray = Ray(ORIGIN, image_coords).translate(np.array([time, 0, 0, 0]))
+
+            object_frame_ray = camera_frame_ray.boost(boost_matrix).translate(moving_object.offset)
+            intersection, color = moving_object.obj.get_intersection_and_color(object_frame_ray)
+            if color:
+                return color
+            else:
+                return self.bg_value
 
         def image_value(i, j):
             x, y = (j - self.image_width / 2, -(i - self.image_height / 2))
-            return self.detect_intersection(x, y, time, scene_object, offset, boost_matrix)
+            return trace_ray(x, y)
 
         image_matrix = np.fromfunction(np.vectorize(image_value),
                                        (self.image_height, self.image_width))
         return Image.fromarray(image_matrix.astype(np.uint8), mode='L')
-
-    def detect_intersection(self, x, y, time, scene_object, offset, boost_matrix):
-        z = self.focal_length
-        origin_to_image_time = util.spatial_vec_length(x, y, z)
-        image_coords = np.array([-origin_to_image_time, x, y, z])
-        original_ray = Ray(ORIGIN, image_coords).translate(np.array([time, 0, 0, 0]))
-
-        transformed_ray = original_ray.boost(boost_matrix).translate(offset)
-        intersection = scene_object.detect_intersection(transformed_ray)
-        if intersection is not None:
-            return 255
-        else:
-            return self.bg_value
-
-    def trace_ray(self, x, y, time, sphere, boost_matrix, visual_effects):
-        z = self.focal_length
-        if visual_effects:
-            origin_to_image_time = util.spatial_vec_length(x, y, z)
-        else:
-            # assume infinite speed of light only for the light rays from the
-            # object to the camera
-            origin_to_image_time = 0
-        image_coords = np.array([-origin_to_image_time, x, y, z])
-        original_ray = Ray(ORIGIN, image_coords).translate(np.array([time, 0, 0, 0]))
-
-        transformed_ray = original_ray.boost(boost_matrix).translate(sphere.offset)
-
-        intersection = sphere.detect_intersection(transformed_ray)
-        if intersection is not None:
-            return sphere.surface_value(*intersection)
-        else:
-            return self.bg_value
 
 
 def image_sequence():
@@ -285,21 +253,17 @@ def image_sequence():
     width = 600
     focal_length = 200
 
-    beta = np.array([0.5, 0, 0])
-    offset = np.array([0, 0, 0, -200])
+    beta = (0.5, 0, 0)
+    offset = (0, 0, 0, -200)
 
     cube = RectangularPrism(100, 100, 100, 1)
+    moving_cube = MovingObject(cube, beta, offset)
 
-
-    # radius = 50
-    # sphere_function = util.checkerboard
-
-    camera = RayTracer(width, height, focal_length)
-    # sphere = Sphere(radius, sphere_function, beta, offset)
+    ray_tracer = RayTracer(width, height, focal_length)
     times = [0, 100, 200, 300]
     for time in times:
-        image = camera.generate_image(cube, time, beta, offset)
-        image.save("example-{:03d}-visual-effects-off.png".format(time), "PNG")
+        image = ray_tracer.generate_image(moving_cube, time)
+        image.save("example-{:03d}.png".format(time), "PNG")
 
 
 if __name__ == '__main__':
