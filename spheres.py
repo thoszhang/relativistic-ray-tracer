@@ -63,6 +63,8 @@ class Sphere(RayTracedObject):
 
 
 class Cylinder(RayTracedObject):
+    """A cylinder, defined by its axis line segment, radius, and color."""
+
     def __init__(self, start, end, radius, color=DEFAULT_OBJ_COLOR):
         self.start = np.asarray(start)
         self.end = np.asarray(end)
@@ -80,7 +82,7 @@ class Cylinder(RayTracedObject):
             return None, None
 
     def _get_intersection(self, ray: Ray):
-        # TODO: document this better
+        # TODO: this is standard, but document this better
         x0 = ray.start_3
         d = ray.direction_3
         d_proj = d - (np.inner(d, self._axis) / self._axis_sq) * self._axis
@@ -177,7 +179,7 @@ class MovingObject:
 
 class RayTracer:
     """
-    An ideal pinhole camera.
+    An "ray tracer" modeled after a ideal pinhole camera.
 
     The pinhole of the camera is at the (spatial) origin, and it faces the +z
     direction. Incoming light rays enter through the pinhole and strike a flat
@@ -201,7 +203,7 @@ class RayTracer:
            -z
 
     If a ray hit the screen at (-x, -y, -z), then we can find the point on the
-    sphere that emitted the ray using backward ray tracing. The backward ray
+    object that emitted the ray using backward ray tracing. The backward ray
     starts at the pinhole at (0, 0, 0), and a point on the ray is (x, y, z).
     Considered as points in Minkowski space, the light entered the pinhole at
     (`time`, 0, 0, 0), and the point on the ray is at (`time`-t1, x, y, z),
@@ -248,23 +250,22 @@ class RayTracer:
         return Image.fromarray(image_matrix.astype(np.uint8), mode='L')
 
 
-def image_sequence():
+def example():
     height = 150
-    width = 600
+    width = 500
     focal_length = 200
 
-    beta = (0.5, 0, 0)
-    offset = (0, 0, 0, 200)
+    beta = (0.6, 0, 0)
+    offset = (0, -200, 0, 200)
 
     cube = RectangularPrism(100, 100, 100, 1)
     moving_cube = MovingObject(cube, beta, offset)
 
     ray_tracer = RayTracer(width, height, focal_length)
-    times = [0, 100, 200, 300]
-    for time in times:
+    for time in range(0, 1500, 100):
         image = ray_tracer.generate_image(moving_cube, time)
-        image.save("example-{:03d}.png".format(time), "PNG")
+        image.save("example-{:04d}.png".format(time), "PNG")
 
 
 if __name__ == '__main__':
-    image_sequence()
+    example()

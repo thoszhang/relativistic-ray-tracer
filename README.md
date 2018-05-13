@@ -2,6 +2,8 @@
 
 ## Introduction
 
+(In progress)
+
 Objects moving at relativistic speeds are contracted in the direction of motion.
 However, the finite speed of light introduces additional visual distortions when an observer looks at an object.
 Light rays emitted from points on the moving object that are farther away from the observer take longer to reach the observer, which causes a lengthening of the apparent shape.
@@ -25,39 +27,6 @@ A lot of these ideas were taken from [_Relativistic Ray-Tracing: Simulating the 
 
 Dependencies are `numpy` and `pillow`.
 
-The `Camera` class models a pinhole camera with a specified image width, image height, and focal length. The `Sphere` class models a sphere moving with a certain velocity and at a certain offset with respect to the camera. All 4-vectors (and some 3-vectors; it's not that consistent) are numpy arrays.
+The `RayTracer` class models a "camera" with a specified image width, image height, and focal length. The `Sphere` class models a sphere moving with a certain velocity and at a certain offset with respect to the camera. All 4-vectors (and some 3-vectors; it's not that consistent) are numpy arrays.
 
-Running `spheres.py` produces the examples shown below.
 
-## Example
-
-Here's a sphere moving past the observer at 1/2 the speed of light.
-(The sphere looks lengthened in some shots because the light rays in this model are projected onto a flat screen, which introduces additional distortions that shouldn't be there.
-See the documentation comments for more details on the pinhole camera model used.)
-
-![](/example-images/example-000-visual-effects-on.png)
-
-![](/example-images/example-100-visual-effects-on.png)
-
-![](/example-images/example-200-visual-effects-on.png)
-
-![](/example-images/example-300-visual-effects-on.png)
-
-For comparison, here are some images indicating the actual position and dimensions of the sphere at the same times as above.
-Note the length contraction.
-Also, the spheres are farther to the right (in the direction of motion) because the light rays in the previous images had a finite speed.
-
-![](/example-images/example-000-visual-effects-off.png)
-
-![](/example-images/example-100-visual-effects-off.png)
-
-![](/example-images/example-200-visual-effects-off.png)
-
-![](/example-images/example-300-visual-effects-off.png)
-
-## Future
-
-* Move the example code out to somewhere else
-* More tests, not just the lower-level calculations
-* Support objects other than spheres (this should be straightforward since the raytracing/camera portions are split off from the objects themselves)
-* Figure out parameters to fix the aberration caused by projecting everything onto a flat surface
