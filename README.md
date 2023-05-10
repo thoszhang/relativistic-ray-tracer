@@ -1,4 +1,4 @@
-# relativistic-spheres
+# relativistic-ray-tracer
 
 ## Introduction
 
