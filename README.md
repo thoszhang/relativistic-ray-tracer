@@ -1,8 +1,8 @@
 # relativistic-ray-tracer
 
-## Introduction
+I gave [a talk about this project](https://bangbangcon.com/2018/recordings.html) (under my old name) at !!Con 2018.
 
-(In progress)
+## Background
 
 Objects moving at relativistic speeds are contracted in the direction of motion.
 However, the finite speed of light introduces additional visual distortions when an observer looks at an object.
